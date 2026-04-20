@@ -1,36 +1,76 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Szefa Test</title>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Mapa Arti PRO</title>
+    
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #333; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
+        .menu-szefa { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
+        button { padding: 12px 16px; background: white; border: 2px solid #333; border-radius: 8px; font-weight: bold; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
+    <div class="menu-szefa">
+        <button onclick="znajdzMnie()">GDZIE JESTEM?</button>
+    </div>
     <div id="map"></div>
+
     <script>
-        // SPRAWDŹ CZY TEN KLUCZ JEST IDENTYCZNY:
-        const key = 'RXqehBn2Ora8xhgt9MQY';
-        
+        // TWÓJ NOWY KLUCZ WSTAWIONY PONIŻEJ:
+        const mojKlucz = 'XVhsY1zyhQLF5Ia2NxQ2';
+
         const map = new maplibregl.Map({
             container: 'map',
-            // ZMIENIAMY NA STYL ULIC (Lżejszy do testu)
-            style: 'https://api.maptiler.com/maps/streets/style.json?key=' + key,
-            center: [19.14, 52.23],
-            zoom: 6
+            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + mojKlucz,
+            center: [19.1451, 52.2370],
+            zoom: 6,
+            hash: true
         });
 
-        map.addControl(new maplibregl.NavigationControl());
-        
-        map.on('error', function(e) {
-            alert("Szefie, błąd mapy: " + e.error.message);
+        // Funkcja głosowa
+        function powiedz(tekst) {
+            const m = new SpeechSynthesisUtterance(tekst);
+            m.lang = 'pl-PL';
+            window.speechSynthesis.speak(m);
+        }
+
+        // Funkcja lokalizacji
+        function znajdzMnie() {
+            navigator.geolocation.getCurrentPosition(position => {
+                const coords = [position.coords.longitude, position.coords.latitude];
+                map.flyTo({ center: coords, zoom: 16 });
+                powiedz("Szefie, namierzyłem Twoją pozycję.");
+                new maplibregl.Marker({color: 'red'}).setLngLat(coords).addTo(map);
+            }, () => {
+                powiedz("Szefie, włącz GPS w telefonie.");
+            });
+        }
+
+        // Dodatki na mapie
+        map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+        map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), 'bottom-right');
+
+        // Powitanie
+        map.on('load', () => {
+            console.log("Mapa działa!");
+            powiedz("Arti melduje wykonanie zadania. Satelita online, Szefie.");
+        });
+
+        // Obsługa błędów
+        map.on('error', (e) => {
+            if (e.error && e.error.status === 403) {
+                alert("Błąd 403: Klucz MapTiler wymaga odblokowania (Allowed Origins musi być puste).");
+            }
         });
     </script>
 </body>
 </html>
+
