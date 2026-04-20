@@ -42,6 +42,3 @@
             trackUserLocation: true,
             showUserLocation: true
         }));
-    </script>
-</body>
-</html>
