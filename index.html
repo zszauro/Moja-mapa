@@ -1,56 +1,65 @@
-
 <!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Arti Satelita</title>
-    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
-    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+    <title>Mapa Arti - Metoda Prosta</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         body, html { margin: 0; padding: 0; height: 100%; background: #000; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        .ui { position: absolute; top: 10px; left: 10px; z-index: 10; }
-        button { padding: 15px; background: white; border: 3px solid black; border-radius: 10px; font-weight: bold; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
+        .przycisk { 
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            padding: 15px 25px; background: white; border: 3px solid #000;
+            border-radius: 10px; font-weight: bold; font-size: 16px;
+        }
     </style>
 </head>
 <body>
-    <div class="ui"><button onclick="lokalizacja()">MOJA POZYCJA</button></div>
+
+    <button class="przycisk" onclick="znajdzMnie()">GDZIE JESTEM?</button>
     <div id="map"></div>
+
     <script>
-        // KLUCZ Z MAŁĄ LITERĄ NA POCZĄTKU:
-        const key = 'mk4tFjD8oPZF7XZiiGBc';
+        // Inicjalizacja mapy
+        var map = L.map('map').setView([52.23, 19.14], 6);
 
-        const map = new maplibregl.Map({
-            container: 'map',
-            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + key,
-            center: [19.14, 52.23],
-            zoom: 6
-        });
+        // Ładowanie satelity bez żadnych kluczy API (Publiczne dane Esri)
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Esri, Maxar, Earthstar Geographics'
+        }).addTo(map);
 
-        function powiedz(t) {
-            const m = new SpeechSynthesisUtterance(t);
+        function powiedz(tekst) {
+            var m = new SpeechSynthesisUtterance(tekst);
             m.lang = 'pl-PL';
             window.speechSynthesis.speak(m);
         }
 
-        function lokalizacja() {
-            navigator.geolocation.getCurrentPosition(p => {
-                const pos = [p.coords.longitude, p.coords.latitude];
-                map.flyTo({center: pos, zoom: 17});
-                powiedz("Szefie, jesteś tutaj.");
-                new maplibregl.Marker({color: 'red'}).setLngLat(pos).addTo(map);
-            }, () => {
-                alert("Włącz GPS!");
-            });
+        function znajdzMnie() {
+            map.locate({setView: true, maxZoom: 16});
         }
 
-        map.addControl(new maplibregl.NavigationControl());
-        map.on('load', () => {
-            powiedz("Satelita gotowa, Szefie.");
+        map.on('locationfound', function(e) {
+            L.marker(e.latlng).addTo(map);
+            powiedz("Szefie, widzę Cię na mapie.");
         });
+
+        map.on('locationerror', function() {
+            alert("Szefie, włącz GPS!");
+        });
+
+        // Powitanie głosowe
+        window.onload = function() {
+            setTimeout(function() {
+                powiedz("Metoda awaryjna uruchomiona. Satelita online, Szefie.");
+            }, 1000);
+        };
     </script>
 </body>
 </html>
+
 
 
