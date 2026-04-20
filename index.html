@@ -3,62 +3,130 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Arti - Metoda Prosta</title>
+    <title>Arti PRO - Satelitarna Nawigacja</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
-        .przycisk { 
-            position: absolute; top: 20px; left: 20px; z-index: 1000;
-            padding: 15px 25px; background: white; border: 3px solid #000;
-            border-radius: 10px; font-weight: bold; font-size: 16px;
+        
+        .panel-szefa {
+            position: absolute; top: 10px; left: 10px; z-index: 1000;
+            display: flex; flex-direction: column; gap: 10px; width: 90%;
         }
+        
+        .przycisk-arti {
+            background: white; border: 3px solid #000; border-radius: 12px;
+            padding: 15px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .status-bar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; background: rgba(255,255,255,0.9); color: black;
+            padding: 8px 20px; border-radius: 30px; font-weight: bold; font-size: 12px;
+            border: 2px solid black; text-align: center;
+        }
+
+        /* Ukrycie brzydkich tabel tekstowych tras */
+        .leaflet-routing-container { display: none; }
     </style>
 </head>
 <body>
 
-    <button class="przycisk" onclick="znajdzMnie()">GDZIE JESTEM?</button>
+    <div class="panel-szefa">
+        <button class="przycisk-arti" onclick="znajdzMnie()">📍 GDZIE JESTEM, ARTI?</button>
+    </div>
+
+    <div class="status-bar" id="status">System Arti PRO gotowy, Szefie.</div>
     <div id="map"></div>
 
     <script>
-        // Inicjalizacja mapy
-        var map = L.map('map').setView([52.23, 19.14], 6);
+        // 1. Start Mapy (Satelita Esri)
+        var map = L.map('map', { zoomControl: false }).setView([52.23, 19.14], 6);
+        var mojaPozycja = null;
+        var trasa = null;
 
-        // Ładowanie satelity bez żadnych kluczy API (Publiczne dane Esri)
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Esri, Maxar, Earthstar Geographics'
+            attribution: 'Satelita Arti PRO'
         }).addTo(map);
 
+        // 2. Głos Arniego
         function powiedz(tekst) {
+            window.speechSynthesis.cancel(); // Przerwij poprzednie, jeśli mówi
             var m = new SpeechSynthesisUtterance(tekst);
             m.lang = 'pl-PL';
+            m.rate = 0.9; // Powolna wymowa dla Szefa
             window.speechSynthesis.speak(m);
         }
 
+        // 3. Wyszukiwarka (dodana do mapy)
+        var geocoder = L.Control.geocoder({
+            defaultMarkGeocode: false,
+            placeholder: "Szukaj miasta...",
+            errorMessage: "Szefie, nie znalazłem takiego miejsca."
+        }).on('markgeocode', function(e) {
+            var bbox = e.geocode.bbox;
+            var poly = L.polygon([
+                bbox.getSouthEast(), bbox.getNorthEast(), bbox.getNorthWest(), bbox.getSouthWest()
+            ]);
+            map.fitBounds(poly.getBounds());
+            wyznaczTrase(e.geocode.center);
+            powiedz("Znalazłem cel: " + e.geocode.name + ". Wyznaczam drogę.");
+        }).addTo(map);
+
+        // 4. Funkcja Lokalizacji
         function znajdzMnie() {
             map.locate({setView: true, maxZoom: 16});
         }
 
         map.on('locationfound', function(e) {
-            L.marker(e.latlng).addTo(map);
-            powiedz("Szefie, widzę Cię na mapie.");
+            mojaPozycja = e.latlng;
+            L.circle(e.latlng, {radius: 20, color: 'cyan'}).addTo(map);
+            document.getElementById('status').innerHTML = "Lokalizacja namierzona.";
+            powiedz("Szefie, namierzyłem Twoją pozycję. Gdzie teraz jedziemy?");
         });
 
-        map.on('locationerror', function() {
-            alert("Szefie, włącz GPS!");
+        // 5. Wyznaczanie Trasy
+        function wyznaczTrase(cel) {
+            if (!mojaPozycja) {
+                alert("Szefie, najpierw kliknij przycisk lokalizacji!");
+                return;
+            }
+            if (trasa) { map.removeControl(trasa); }
+
+            trasa = L.Routing.control({
+                waypoints: [ mojaPozycja, cel ],
+                lineOptions: { styles: [{ color: '#00ccff', weight: 8, opacity: 0.8 }] },
+                createMarker: function(i, wp) {
+                    return L.marker(wp.latLng).bindPopup(i === 0 ? "START" : "CEL");
+                }
+            }).addTo(map);
+        }
+
+        // Kliknięcie w mapę też wyznacza trasę
+        map.on('click', function(e) {
+            wyznaczTrase(e.latlng);
+            document.getElementById('status').innerHTML = "Trasa w toku...";
+            powiedz("Rozpoczynam obliczanie trasy do punktu na mapie.");
         });
 
-        // Powitanie głosowe
+        // Powitanie przy starcie
         window.onload = function() {
             setTimeout(function() {
-                powiedz("Metoda awaryjna uruchomiona. Satelita online, Szefie.");
-            }, 1000);
+                powiedz("Okej szefie. Jestem Arti. System satelitarny uruchomiony. Czekam na Twoje polecenia.");
+            }, 1500);
         };
+
+        map.on('locationerror', function() {
+            powiedz("Szefie, masz wyłączony G P S. Nie widzę Cię.");
+        });
     </script>
 </body>
 </html>
-
-
