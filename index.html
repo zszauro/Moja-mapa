@@ -3,74 +3,53 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>Mapa Arti PRO</title>
-    
+    <title>Mapa Arti Satelita</title>
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
-
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #000; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; }
-        .menu-szefa { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 8px; }
-        button { padding: 12px 16px; background: white; border: 2px solid #333; border-radius: 8px; font-weight: bold; font-family: sans-serif; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .ui { position: absolute; top: 10px; left: 10px; z-index: 10; }
+        button { padding: 15px; background: white; border: 3px solid black; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="menu-szefa">
-        <button onclick="znajdzMnie()">GDZIE JESTEM?</button>
-    </div>
+    <div class="ui"><button onclick="lokalizacja()">MOJA POZYCJA</button></div>
     <div id="map"></div>
-
     <script>
-        // TWÓJ NOWY KLUCZ WSTAWIONY PONIŻEJ:
-        const mojKlucz = 'XVhsY1zyhQLF5Ia2NxQ2';
+        // KLUCZ Z MAŁĄ LITERĄ NA POCZĄTKU:
+        const key = 'mk4tFjD8oPZF7XZiiGBc';
 
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + mojKlucz,
-            center: [19.1451, 52.2370],
-            zoom: 6,
-            hash: true
+            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + key,
+            center: [19.14, 52.23],
+            zoom: 6
         });
 
-        // Funkcja głosowa
-        function powiedz(tekst) {
-            const m = new SpeechSynthesisUtterance(tekst);
+        function powiedz(t) {
+            const m = new SpeechSynthesisUtterance(t);
             m.lang = 'pl-PL';
             window.speechSynthesis.speak(m);
         }
 
-        // Funkcja lokalizacji
-        function znajdzMnie() {
-            navigator.geolocation.getCurrentPosition(position => {
-                const coords = [position.coords.longitude, position.coords.latitude];
-                map.flyTo({ center: coords, zoom: 16 });
-                powiedz("Szefie, namierzyłem Twoją pozycję.");
-                new maplibregl.Marker({color: 'red'}).setLngLat(coords).addTo(map);
+        function lokalizacja() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const pos = [p.coords.longitude, p.coords.latitude];
+                map.flyTo({center: pos, zoom: 17});
+                powiedz("Szefie, jesteś tutaj.");
+                new maplibregl.Marker({color: 'red'}).setLngLat(pos).addTo(map);
             }, () => {
-                powiedz("Szefie, włącz GPS w telefonie.");
+                alert("Włącz GPS!");
             });
         }
 
-        // Dodatki na mapie
-        map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-        map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), 'bottom-right');
-
-        // Powitanie
+        map.addControl(new maplibregl.NavigationControl());
         map.on('load', () => {
-            console.log("Mapa działa!");
-            powiedz("Arti melduje wykonanie zadania. Satelita online, Szefie.");
-        });
-
-        // Obsługa błędów
-        map.on('error', (e) => {
-            if (e.error && e.error.status === 403) {
-                alert("Błąd 403: Klucz MapTiler wymaga odblokowania (Allowed Origins musi być puste).");
-            }
+            powiedz("Satelita gotowa, Szefie.");
         });
     </script>
 </body>
 </html>
+
 
