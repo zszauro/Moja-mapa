@@ -1,44 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="pl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
-    
-    <title>Satelita Szefa</title>
-    
+    <title>Mapa Arti Satelita</title>
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
-    
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-        /* Dodajemy ładną ramkę dla przycisków */
-        .maplibregl-ctrl-group { border: none !important; box-shadow: 0 0 10px rgba(0,0,0,0.5) !important; }
+        .ui { position: absolute; top: 10px; left: 10px; z-index: 10; }
+        button { padding: 15px; background: white; border: 3px solid black; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
+    <div class="ui"><button onclick="lokalizacja()">MOJA POZYCJA</button></div>
     <div id="map"></div>
     <script>
-        const klucz = 'RXqehBn2Ora8xhgt9MQY';
+        // SZEFIE: Nawet jeśli tu będzie duża litera na początku, kod ją naprawi!
+        let surowyKlucz = "MK4tFjD8oPZF7XZiiGBc";
+        
+        // Ta linijka zamienia pierwszą literę na małą "m", jeśli telefon ją powiększył
+        const poprawnyKlucz = "m" + surowyKlucz.substring(1);
 
         const map = new maplibregl.Map({
             container: 'map',
-            // Tutaj ustawiłem styl satelitarny
-            style: `https://api.maptiler.com/maps/satellite/style.json?key=${klucz}`,
-            center: [19.1451, 52.2370],
-            zoom: 6,
-            pitch: 45 // Lekkie pochylenie mapy dla efektu 3D
+            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + poprawnyKlucz,
+            center: [19.14, 52.23],
+            zoom: 6
         });
 
-        // Przyciski plus/minus
+        function powiedz(t) {
+            const m = new SpeechSynthesisUtterance(t);
+            m.lang = 'pl-PL';
+            window.speechSynthesis.speak(m);
+        }
+
+        function lokalizacja() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const pos = [p.coords.longitude, p.coords.latitude];
+                map.flyTo({center: pos, zoom: 17});
+                powiedz("Szefie, jesteś tutaj. Satelita Cię widzi.");
+                new maplibregl.Marker({color: 'red'}).setLngLat(pos).addTo(map);
+            }, () => {
+                alert("Włącz GPS!");
+            });
+        }
+
         map.addControl(new maplibregl.NavigationControl());
-        
-        // Przycisk "Gdzie jestem?"
-        map.addControl(new maplibregl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            showUserLocation: true
-        }));
+        map.on('load', () => {
+            powiedz("System gotowy, Szefie. Tym razem go przechytrzyliśmy.");
+        });
+    </script>
+</body>
+</html>
+
