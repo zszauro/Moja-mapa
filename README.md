@@ -17,10 +17,9 @@
     <div class="ui"><button onclick="lokalizacja()">MOJA POZYCJA</button></div>
     <div id="map"></div>
     <script>
-        // SZEFIE: Nawet jeśli tu będzie duża litera na początku, kod ją naprawi!
-        let surowyKlucz = "MK4tFjD8oPZF7XZiiGBc";
-        
-        // Ta linijka zamienia pierwszą literę na małą "m", jeśli telefon ją powiększył
+        // KOD NAPRAWIAJĄCY BŁĘDY KLAWIATURY:
+        // Niezależnie od tego, czy wkleisz dużą czy małą literę, system wymusi małe 'm'
+        const surowyKlucz = "MK4tFjD8oPZF7XZiiGBc"; 
         const poprawnyKlucz = "m" + surowyKlucz.substring(1);
 
         const map = new maplibregl.Map({
@@ -49,9 +48,10 @@
 
         map.addControl(new maplibregl.NavigationControl());
         map.on('load', () => {
-            powiedz("System gotowy, Szefie. Tym razem go przechytrzyliśmy.");
+            powiedz("Satelita gotowa. Czekam na rozkazy, Szefie.");
         });
     </script>
 </body>
 </html>
+
 
