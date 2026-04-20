@@ -1,59 +1,47 @@
+
 <!DOCTYPE html>
-<html lang="pl">
+<html>
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Mapa Szefa FINAL</title>
+    <title>Mapa Arti</title>
     <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; height: 100%; background: #222; }
-        .btn-box { position: absolute; top: 10px; left: 10px; z-index: 10; display: flex; flex-direction: column; gap: 5px; }
-        button { padding: 10px; background: white; border: 1px solid #ccc; border-radius: 5px; font-weight: bold; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #000; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .ui { position: absolute; top: 10px; left: 10px; z-index: 10; }
+        button { padding: 8px; background: white; border-radius: 5px; font-weight: bold; border: 2px solid black; }
     </style>
 </head>
 <body>
-    <div class="btn-box">
-        <button onclick="powiedz('Szefie, szukam parkingów')">Parkingi</button>
-        <button onclick="powiedz('Szukamy jedzenia, Szefie')">Restauracje</button>
-    </div>
+    <div class="ui"><button onclick="lokalizacja()">GDZIE JESTEM?</button></div>
     <div id="map"></div>
     <script>
-        const klucz = 'RXqehBn2Ora8xhgt9MQY';
-        
+        const key = 'RXqehBn2Ora8xhgt9MQY';
         const map = new maplibregl.Map({
             container: 'map',
-            style: `https://api.maptiler.com/maps/satellite/style.json?key=${klucz}`,
+            style: 'https://api.maptiler.com/maps/satellite/style.json?key=' + key,
             center: [19.14, 52.23],
             zoom: 6
         });
 
-        function powiedz(tekst) {
-            const msg = new SpeechSynthesisUtterance(tekst);
-            msg.lang = 'pl-PL';
-            window.speechSynthesis.speak(msg);
+        function powiedz(t) {
+            const m = new SpeechSynthesisUtterance(t);
+            m.lang = 'pl-PL';
+            window.speechSynthesis.speak(m);
+        }
+
+        function lokalizacja() {
+            navigator.geolocation.getCurrentPosition(p => {
+                const pos = [p.coords.longitude, p.coords.latitude];
+                map.flyTo({center: pos, zoom: 15});
+                powiedz("Szefie, jesteś tutaj.");
+            });
         }
 
         map.addControl(new maplibregl.NavigationControl());
-        map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }));
-
-        map.on('load', () => {
-            console.log("Mapa załadowana!");
-            powiedz("Arti melduje wykonanie zadania, Szefie. Mapa działa.");
-        });
-
-        // Proste wyznaczanie trasy (linia prosta na razie, by sprawdzić czy działa)
-        let points = [];
-        map.on('click', (e) => {
-            points.push([e.lngLat.lng, e.lngLat.lat]);
-            new maplibregl.Marker().setLngLat(e.lngLat).addTo(map);
-            
-            if (points.length === 2) {
-                powiedz("Wyznaczam trasę dla Szefa.");
-                // Tutaj mapa narysuje linię między punktami
-            }
-        });
+        map.on('load', () => powiedz("System gotowy, Szefie. Mapa satelitarna załadowana."));
     </script>
 </body>
 </html>
